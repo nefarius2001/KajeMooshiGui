@@ -1,0 +1,3 @@
+[submodule "MooshimeterAPI"]
+	path = MooshimeterAPI
+	url = https://github.com/nefarius2001/Mooshimeter-PythonAPI.git
