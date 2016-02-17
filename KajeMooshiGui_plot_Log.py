@@ -57,10 +57,10 @@ try:
 			#print line, # already has newline
 			#mo=re.search("this is line ([0-9]*)", line)
 			sRegex="([^;]*);" #time
-			sRegex+=" AKaje=([0-9\.]*);"
-			sRegex+=" VKaje=([0-9\.]*);"
-			sRegex+=" Iraw=([0-9\.]*);"
-			sRegex+=" Uraw=([0-9\.]*);"
+			sRegex+=" AKaje=([\+\-0-9\.]*);"
+			sRegex+=" VKaje=([\+\-0-9\.]*);"
+			sRegex+=" Iraw=([\+\-0-9\.]*);"
+			sRegex+=" Uraw=([\+\-0-9\.]*);"
 			print sRegex
 			mo=re.search(sRegex, line)
 			if mo:
