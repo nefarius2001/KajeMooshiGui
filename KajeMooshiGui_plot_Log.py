@@ -24,7 +24,7 @@ logfile.seek(st_size)
 def initPlot():
 	# init plot
 	plt.ion() ## Note this correction
-	fig_local, (ax1, ax2) = plt.subplots(2, 1, sharey=True)
+	fig_local, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
 	#myFigNum=fig.number
 	#plt.axis([0,1000,0,1])
 	ax1.set_xlabel('time [s]')
@@ -53,20 +53,19 @@ try:
 			timeStop=datetime.now()
 			#print "no line, paused %.3f seconds"%((timeStop-timeStart).total_seconds())
 		else:
+			print ""
 			print "new line"
 			#print line, # already has newline
-			#mo=re.search("this is line ([0-9]*)", line)
 			sRegex="([^;]*);" #time
 			sRegex+=" AKaje=([\+\-0-9\.]*);"
 			sRegex+=" VKaje=([\+\-0-9\.]*);"
 			sRegex+=" Iraw=([\+\-0-9\.]*);"
 			sRegex+=" Uraw=([\+\-0-9\.]*);"
-			print sRegex
+			#print sRegex
 			mo=re.search(sRegex, line)
 			if mo:
 			#	print "match"		
 				tmp_timestamp_string=mo.group(1)
-				# '%Y-%m-%d %H:%M:%S.%f'
 				tmp_timestamp=datetime.strptime(tmp_timestamp_string, '%Y-%m-%d %H:%M:%S.%f')
 				tmp_meas_A_kaje=float(mo.group(2))
 				tmp_meas_V_kaje=float(mo.group(3))
@@ -74,14 +73,16 @@ try:
 				tmp_meas_Uraw  =float(mo.group(5))
 				if (startTime==0):
 					startTime=tmp_timestamp
+				delta=tmp_timestamp-startTime
+				
 				print "time Log: ", tmp_timestamp
 				print "time now: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+				print "delta xxx: " , delta.total_seconds()
+				print "I_raw 0x%06X "%tmp_meas_Iraw
+				print "U_raw 0x%06X "%tmp_meas_Uraw
 				print "A_kaje %.3f A "%tmp_meas_A_kaje
 				print "V_Kaje %.3f V "%tmp_meas_V_kaje
-				print "I_raw 0x%06X "%tmp_meas_Iraw
-				print "I_raw 0x%06X "%tmp_meas_Uraw
-				delta=tmp_timestamp-startTime
-				print "delta xxx: " , delta.total_seconds()
+				
 				timePlotStart=datetime.now()
 				if not plt.fignum_exists((fig.number)):
 					print "closed figure"
@@ -92,6 +93,8 @@ try:
 					
 				ax1.scatter(delta.total_seconds() ,tmp_meas_V_kaje);
 				ax2.scatter(delta.total_seconds() ,tmp_meas_A_kaje);
+				ax1.set_title("U = %.3f V"%tmp_meas_V_kaje)
+				ax2.set_title("I = %.3f A"%tmp_meas_A_kaje)
 				
 				#ax1.show()
 				#plt.pause(0.0001) #Note this correction
