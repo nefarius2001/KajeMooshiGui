@@ -47,7 +47,7 @@ def NewLogLine_handler(tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Iraw,tmp_meas_Ur
 	#plt.pause(0.0001) #Note this correction
 	timePlotStop=datetime.now()
 	print "plotting took %.3f seconds"%((timePlotStop-timePlotStart).total_seconds())
-def CheckLogForNewLine:
+def CheckLogForNewLine():
 	where = logfile.tell()
 	line = logfile.readline()
 	if not line:
@@ -80,18 +80,28 @@ def CheckLogForNewLine:
 			NewLogLine_handler(tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Iraw,tmp_meas_Uraw)
 		else:
 			print "no RegEx match"
-def MainLoopCallback:
+def MainLoopCallback():
+	print "MainLoopCallback: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+	lbl1_string.set("Hey!? How are you doing?"  + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
 	CheckLogForNewLine()
-	top.after(100, CheckLogForNewLine)
+	rootTk.after(100, MainLoopCallback)
 startTime=0
 
-top = Tkinter.Tk()
+rootTk = Tkinter.Tk()
 # Code to add widgets will go here...
-top.after(100, CheckLogForNewLine)
+rootTk.after(100, MainLoopCallback)
+
+lbl1_string = Tkinter.StringVar()
+label = Tkinter.Label( rootTk, textvariable=lbl1_string, font = "Helvetica 30 bold", relief=Tkinter.RAISED )
+lbl1_string.set("Hey!? How are you doing?")
+label.pack()
+button = Tkinter.Button(rootTk, text='Stop', width=25, command=rootTk.destroy)
+button.pack()
 try:
 
-	top.mainloop()
+	rootTk.mainloop()
 
 except KeyboardInterrupt:
 	print "quitting"
-	quit()
+	pass
+print "done"
