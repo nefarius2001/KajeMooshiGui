@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import GetPaths
 import Tkinter
+from collections import deque
 
 """
 KajeMooshiGui_plot_Log.py
@@ -28,9 +29,10 @@ logfile.seek(st_size)
 
 class Cdata:
 	def __init__(self):
-		self.x = []
-		self.y = []
-		self.dates = []
+		self.dates = deque()
+		self.x = deque()
+		self.y_U = deque()
+		self.y_I = deque()
 
 def NewData_AppendDataset(new_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Iraw,tmp_meas_Uraw):
 	timestampnow=datetime.now()
@@ -43,26 +45,32 @@ def NewData_AppendDataset(new_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas
 	#print "delta xxx: " , delta.total_seconds()
 	#timePlotStart=datetime.now()
 	
-	data1.dates.append(new_timestamp)
-	data1.x.append(999) # to keep length persistant
-	data1.y.append(tmp_meas_V_kaje)
-	data2.dates.append(new_timestamp)
-	data2.x.append(999) # to keep length persistant
-	data2.y.append(tmp_meas_A_kaje)
+	mydata.dates.append(new_timestamp)
+	mydata.x.append(999) # to keep length persistant
+	mydata.y_U.append(tmp_meas_V_kaje)
+	mydata.y_I.append(tmp_meas_A_kaje)
 	
-	for k in range(0, len(data1.dates)):
-		data1.x[k]=-((timestampnow - data1.dates[k]).total_seconds())
-		data2.x[k]=-((timestampnow - data2.dates[k]).total_seconds())
+	for k in range(0, len(mydata.dates)):
+		mydata.x[k]=-((timestampnow - mydata.dates[k]).total_seconds())
+		
+	MAX_FALLBEHIND = -5
+	if True:
+		while(mydata.x[0] < MAX_FALLBEHIND):
+			mydata.dates.popleft()
+			mydata.x.popleft()
+			mydata.y_U.popleft()
+			mydata.y_I.popleft()
 	
-	line1.set_data(data1.x ,data1.y);
-	l2.set_data(data2.x ,data2.y);
+	line1.set_data(mydata.x ,mydata.y_U);
+	line2.set_data(mydata.x ,mydata.y_I);
 	lbl1_string.set("U = %.3f V"%tmp_meas_V_kaje)
 	lbl2_string.set("I = %.3f A"%tmp_meas_A_kaje)
 	
-	ax1.relim()
-	ax1.autoscale(True,'both',True)
-	ax2.relim()
-	ax2.autoscale(True,'both',True)
+	for axFor in [ax1, ax2]:
+		axFor.relim()
+		axFor.set_xlim(MAX_FALLBEHIND, 0)
+		axFor.autoscale(True,'y',True)
+		#ax1.autoscale(True,'both',True)
 	
 def NewData_redraw():
 	print "NewData_redraw"
@@ -126,11 +134,11 @@ label = Tkinter.Label( rootTk, textvariable=lbl1_string, font = TITLE_FONT, reli
 lbl1_string.set("U = ????")
 label.pack()
 
-data1=Cdata()
+mydata=Cdata()
 f1 = Figure(figsize=(5,5), dpi=FIGURE_DPI)
 ax1 = f1.add_subplot(111)
-line1, = ax1.plot(data1.x,data1.y)
-#line1 = Line2D(data1.x,data1.y, color='black')
+line1, = ax1.plot([],[])
+#line1 = Line2D(mydata.x,mydata.y, color='black')
 #ax1.add_line(line1)
 
 canvas1 = FigureCanvasTkAgg(f1, master = rootTk)
@@ -146,10 +154,9 @@ label = Tkinter.Label( rootTk, textvariable=lbl2_string, font = TITLE_FONT, reli
 lbl2_string.set("I = ????")
 label.pack()
 
-data2=Cdata()
 f2 = Figure(figsize=(5,5), dpi=FIGURE_DPI)
 ax2 = f2.add_subplot(111)
-l2, = ax2.plot([1,2,3,4,5,6,7,8],[5,6,1,3,8,9,3,5])
+line2, = ax2.plot([],[])
 
 canvas2 = FigureCanvasTkAgg(f2, master = rootTk)
 canvas2.show()
