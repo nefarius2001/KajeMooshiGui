@@ -27,13 +27,15 @@ st_size = st_results[6]
 logfile.seek(st_size)
 
 class Cdata:
-   def __init__(self):
-        self.x = []
-        self.y = []
+	def __init__(self):
+		self.x = []
+		self.y = []
+		self.dates = []
 
-def NewLogLine_handler(tmp_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Iraw,tmp_meas_Uraw):
-	print "time Log: " + tmp_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-	print "time now: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+def NewData_AppendDataset(new_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Iraw,tmp_meas_Uraw):
+	timestampnow=datetime.now()
+	print "time Log: " + new_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+	print "time now: " + timestampnow.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 	print "A_kaje %.3f A "%tmp_meas_A_kaje
 	print "V_Kaje %.3f V "%tmp_meas_V_kaje
 	print "I_raw 0x%06X "%tmp_meas_Iraw
@@ -41,10 +43,16 @@ def NewLogLine_handler(tmp_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Ir
 	#print "delta xxx: " , delta.total_seconds()
 	#timePlotStart=datetime.now()
 	
-	data1.x.append(len(data1.y)+1)
+	data1.dates.append(new_timestamp)
+	data1.x.append(999) # to keep length persistant
 	data1.y.append(tmp_meas_V_kaje)
-	data2.x.append(len(data2.y)+1)
-	data2.y.append(len(data2.y)+1)
+	data2.dates.append(new_timestamp)
+	data2.x.append(999) # to keep length persistant
+	data2.y.append(tmp_meas_A_kaje)
+	
+	for k in range(0, len(data1.dates)):
+		data1.x[k]=-((timestampnow - data1.dates[k]).total_seconds())
+		data2.x[k]=-((timestampnow - data2.dates[k]).total_seconds())
 	
 	line1.set_data(data1.x ,data1.y);
 	l2.set_data(data2.x ,data2.y);
@@ -56,7 +64,8 @@ def NewLogLine_handler(tmp_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Ir
 	ax2.relim()
 	ax2.autoscale(True,'both',True)
 	
-	
+def NewData_redraw():
+	print "NewData_redraw"
 	canvas1.draw()
 	canvas2.draw()
 	plt.draw()
@@ -68,9 +77,9 @@ def NewLogLine_handler(tmp_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Ir
 def CheckLogForNewLine():
 	where = logfile.tell()
 	line = logfile.readline()
-	if not line:
-		print "no line"
-	else:
+	iLines=0
+	while(line):
+		iLines=iLines+1
 		print "new line"
 		#print line, # already has newline
 		#mo=re.search("this is line ([0-9]*)", line)
@@ -90,9 +99,16 @@ def CheckLogForNewLine():
 			tmp_meas_V_kaje=float(mo.group(3))
 			tmp_meas_Iraw  =float(mo.group(4))
 			tmp_meas_Uraw  =float(mo.group(5))
-			NewLogLine_handler(tmp_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Iraw,tmp_meas_Uraw)
+			NewData_AppendDataset(tmp_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas_Iraw,tmp_meas_Uraw)
 		else:
 			print "no RegEx match"
+		print "next line"
+		line = logfile.readline()
+	if(iLines<=0):
+		print "no line"
+	else:
+		print "there were %d lines" % iLines
+		NewData_redraw()
 def MainLoopCallback():
 	print "MainLoopCallback: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 	lbl3_string.set("time = "  + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
@@ -111,8 +127,6 @@ lbl1_string.set("U = ????")
 label.pack()
 
 data1=Cdata()
-data1.x=[1,2,3,4]
-data1.y=[0.1,0,-0.1,0]
 f1 = Figure(figsize=(5,5), dpi=FIGURE_DPI)
 ax1 = f1.add_subplot(111)
 line1, = ax1.plot(data1.x,data1.y)
@@ -133,8 +147,6 @@ lbl2_string.set("I = ????")
 label.pack()
 
 data2=Cdata()
-data2.x=[1,2,3,4]
-data2.y=[1,2,3,4]
 f2 = Figure(figsize=(5,5), dpi=FIGURE_DPI)
 ax2 = f2.add_subplot(111)
 l2, = ax2.plot([1,2,3,4,5,6,7,8],[5,6,1,3,8,9,3,5])
