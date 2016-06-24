@@ -83,7 +83,8 @@ if __name__=="__main__":
 			print "%+4.3f"%(tmp_meas_V_kaje*1000), "m", tmp_unit_V, " Kaje"
 			print ""
 
-			sTime=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+			#sTime=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+			sTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 			sLine=sTime + "; AKaje=%.6f;"%tmp_meas_A_kaje + " VKaje=%.6f;"%tmp_meas_V_kaje + " Iraw=%i;"%tmp_meas_Iraw  + " Uraw=%i;"%tmp_meas_Uraw 
 			print sLine
 			logfile.write(sLine + "\n")

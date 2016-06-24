@@ -27,6 +27,8 @@ st_results = os.stat(logfilename)
 st_size = st_results[6]
 logfile.seek(st_size)
 
+MAX_FALLBEHIND = -5
+
 class Cdata:
 	def __init__(self):
 		self.dates = deque()
@@ -41,19 +43,31 @@ def NewData_AppendDataset(new_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas
 	print "A_kaje %.3f A "%tmp_meas_A_kaje
 	print "V_Kaje %.3f V "%tmp_meas_V_kaje
 	print "I_raw 0x%06X "%tmp_meas_Iraw
-	print "I_raw 0x%06X "%tmp_meas_Uraw
+	print "U_raw 0x%06X "%tmp_meas_Uraw
 	#print "delta xxx: " , delta.total_seconds()
 	#timePlotStart=datetime.now()
 	
 	mydata.dates.append(new_timestamp)
-	mydata.x.append(999) # to keep length persistant
+	mydata.x.append(0) # to keep length persistant
 	mydata.y_U.append(tmp_meas_V_kaje)
 	mydata.y_I.append(tmp_meas_A_kaje)
 	
+	return
+	
+def Dataset_CalcRealtime():
+	timestampnow=datetime.now()
 	for k in range(0, len(mydata.dates)):
 		mydata.x[k]=-((timestampnow - mydata.dates[k]).total_seconds())
-		
-	MAX_FALLBEHIND = -5
+		#print "mydata.x[%i]=%.1f " % (k,mydata.x[k])
+
+def Dataset_ChopOld():
+	while(len(mydata.dates)>20):
+		mydata.dates.popleft()
+		mydata.x.popleft()
+		mydata.y_U.popleft()
+		mydata.y_I.popleft()
+	
+	return
 	if True:
 		while(mydata.x[0] < MAX_FALLBEHIND):
 			mydata.dates.popleft()
@@ -61,22 +75,35 @@ def NewData_AppendDataset(new_timestamp,tmp_meas_A_kaje,tmp_meas_V_kaje,tmp_meas
 			mydata.y_U.popleft()
 			mydata.y_I.popleft()
 	
+def Plot_Update():
+	print "Plot_Update"
+	if(len(mydata.y_U)<1):
+		return
+	tmp_meas_V_kaje = mydata.y_U[-1]
+	tmp_meas_A_kaje = mydata.y_I[-1]
+	#line1.set_data([1,2],[3,tmp_meas_A_kaje]);
 	line1.set_data(mydata.x ,mydata.y_U);
 	line2.set_data(mydata.x ,mydata.y_I);
 	lbl1_string.set("U = %.3f V"%tmp_meas_V_kaje)
 	lbl2_string.set("I = %.3f A"%tmp_meas_A_kaje)
 	
+	print "mydata.x=" , mydata.x
+	#print "mydata.y_U=" , mydata.y_U
+	
 	for axFor in [ax1, ax2]:
 		axFor.relim()
+	#	axFor.set_xlim(MAX_FALLBEHIND, 0)
+	#	axFor.autoscale(True,'y',True)
+		axFor.autoscale(True,'both',True)
 		axFor.set_xlim(MAX_FALLBEHIND, 0)
-		axFor.autoscale(True,'y',True)
-		#ax1.autoscale(True,'both',True)
 	
-def NewData_redraw():
-	print "NewData_redraw"
+def Plot_redraw():
+	print "Plot_redraw"
+	plt.draw()
 	canvas1.draw()
 	canvas2.draw()
-	plt.draw()
+	#line1.draw()
+	#line2.draw()
 	
 	#ax1.show()
 	#plt.pause(0.0001) #Note this correction
@@ -116,7 +143,10 @@ def CheckLogForNewLine():
 		print "no line"
 	else:
 		print "there were %d lines" % iLines
-		NewData_redraw()
+	Dataset_CalcRealtime()
+	Dataset_ChopOld()
+	Plot_Update()
+	Plot_redraw()
 def MainLoopCallback():
 	print "MainLoopCallback: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 	lbl3_string.set("time = "  + datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
@@ -137,9 +167,10 @@ label.pack()
 mydata=Cdata()
 f1 = Figure(figsize=(5,5), dpi=FIGURE_DPI)
 ax1 = f1.add_subplot(111)
-line1, = ax1.plot([],[])
-#line1 = Line2D(mydata.x,mydata.y, color='black')
-#ax1.add_line(line1)
+#line1, = ax1.plot([1,2],[8,9])
+#line1, = ax1.plot(0,0)
+line1 = Line2D([],[], color='black', linewidth=2 , marker='o')
+ax1.add_line(line1)
 
 canvas1 = FigureCanvasTkAgg(f1, master = rootTk)
 canvas1.show()
@@ -174,9 +205,10 @@ label.pack()
 button = Tkinter.Button(rootTk, text='Stop', width=25, command=rootTk.destroy)
 button.pack()
 
-
-
 rootTk.after(100, MainLoopCallback)
+
+plt.show()
+
 try:
 	rootTk.mainloop()
 except KeyboardInterrupt:
